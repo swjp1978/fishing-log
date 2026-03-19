@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Fisholog</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fisholog">
+<meta name="theme-color" content="#0a0f14">
+<meta name="description" content="Your personal fishing catch journal">
+
+<script>
+(function(){
+  const manifest = {
+    name:"Fisholog",short_name:"Fisholog",description:"Your personal fishing catch journal",
+    start_url:".",display:"standalone",background_color:"#0a0f14",theme_color:"#0a0f14",orientation:"portrait",
+    icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230a0f14'/%3E%3Ctext y='340' x='80' font-size='340'%3E🎣%3C/text%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml"}]
+  };
+  const link=document.createElement('link');link.rel='manifest';
+  link.href=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/json'}));
+  document.currentScript.after(link);
+})();
+</script>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230a0f14'/%3E%3Ctext y='340' x='80' font-size='340'%3E%F0%9F%8E%A3%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:          #0a0f14;
+  --surface:     #111820;
+  --surface2:    #182030;
+  --surface3:    #1e2a3a;
+  --border:      rgba(255,255,255,0.06);
+  --border2:     rgba(255,255,255,0.11);
+  --text:        #dde6f0;
+  --text-muted:  #6b7f96;
+  --text-dim:    #354a5e;
+  --accent:      #00c2ff;
+  --accent2:     #0090c8;
+  --accent-glow: rgba(0,194,255,0.18);
+  --green:       #00e5a0;
+  --red:         #ff4757;
+  --gold:        #f5a623;
+  --r:           12px;
+  --r-sm:        8px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{height:100%;color-scheme:dark;}
+body{
+  font-family:'Space Grotesk',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100dvh;
+  overscroll-behavior:none;
+  padding-bottom:calc(88px + env(safe-area-inset-bottom,0px));
+}
+
+/* ── HEADER ────────────────────────────────── */
+header{
+  background:rgba(10,15,20,0.92);
+  border-bottom:1px solid var(--border);
+  padding:calc(14px + env(safe-area-inset-top,0px)) 20px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+}
+
+.logo{display:flex;align-items:center;gap:11px;}
+
+.logo-icon{
+  width:38px;height:38px;
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+  border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;flex-shrink:0;
+  box-shadow:0 0 24px var(--accent-glow);
+}
+
+.logo-text{display:flex;flex-direction:column;line-height:1;}
+
+.logo-name{
+  font-size:22px;font-weight:700;letter-spacing:-0.5px;color:var(--text);
+}
+.logo-name span{color:var(--accent);}
+
+.logo-tagline{
+  font-size:10px;font-weight:400;color:var(--text-muted);
+  letter-spacing:0.4px;margin-top:2px;
+}
+
+.btn-add{
+  background:var(--accent);color:#000;border:none;
+  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;
+  padding:10px 18px;cursor:pointer;border-radius:var(--r-sm);
+  transition:all 0.2s;letter-spacing:0.2px;
+  box-shadow:0 0 20px var(--accent-glow);
+}
+.btn-add:hover{background:#22d4ff;box-shadow:0 0 32px rgba(0,194,255,0.35);transform:translateY(-1px);}
+
+/* ── INSTALL BANNER ──────────────────────── */
+.install-banner{
+  display:none;background:rgba(0,194,255,0.07);
+  border-bottom:1px solid rgba(0,194,255,0.14);
+  padding:11px 16px;font-size:12px;align-items:center;gap:10px;
+}
+.install-banner.visible{display:flex;}
+.install-banner span{flex:1;color:var(--text-muted);}
+.install-dismiss{
+  background:none;border:1px solid var(--border2);
+  color:var(--text-muted);font-family:'Space Grotesk',sans-serif;
+  font-size:11px;font-weight:500;padding:5px 10px;
+  border-radius:6px;cursor:pointer;white-space:nowrap;transition:all 0.15s;
+}
+.install-dismiss:hover{border-color:var(--accent);color:var(--accent);}
+
+/* ── STATS BAR ───────────────────────────── */
+.stats-bar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;overflow-x:auto;scrollbar-width:none;
+}
+.stats-bar::-webkit-scrollbar{display:none;}
+.stat{
+  flex:1;min-width:88px;padding:13px 14px;text-align:center;
+  border-right:1px solid var(--border);
+}
+.stat:last-child{border-right:none;}
+.stat-num{
+  font-size:22px;font-weight:700;color:var(--accent);
+  display:block;letter-spacing:-0.5px;line-height:1;
+}
+.stat-label{
+  font-size:9px;font-weight:500;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--text-muted);
+  margin-top:4px;display:block;
+}
+
+/* ── MAIN ────────────────────────────────── */
+main{max-width:1100px;margin:0 auto;padding:22px 16px;}
+
+/* ── TOOLBAR ─────────────────────────────── */
+.toolbar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+
+.search-wrap{position:relative;flex:1;min-width:170px;}
+.search-icon{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  color:var(--text-muted);font-size:15px;pointer-events:none;
+}
+.search-input{
+  width:100%;background:var(--surface);border:1px solid var(--border2);
+  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:400;
+  padding:11px 12px 11px 36px;color:var(--text);border-radius:var(--r-sm);
+  outline:none;transition:border-color 0.2s,box-shadow 0.2s;
+}
+.search-input::placeholder{color:var(--text-dim);}
+.search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+
+.filter-select{
+  background:var(--surface);border:1px solid var(--border2);
+  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:400;
+  padding:11px 12px;color:var(--text);border-radius:var(--r-sm);
+  cursor:pointer;outline:none;transition:border-color 0.2s;-webkit-appearance:none;
+}
+.filter-select:focus{border-color:var(--accent);}
+
+/* ── GRID ────────────────────────────────── */
+.catch-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:14px;
+}
+
+/* ── CARD ────────────────────────────────── */
+.catch-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;cursor:pointer;
+  transition:transform 0.2s,border-color 0.2s,box-shadow 0.2s;
+  position:relative;
+}
+.catch-card:hover{transform:translateY(-4px);border-color:var(--border2);box-shadow:0 12px 40px rgba(0,0,0,0.5);}
+.catch-card:active{transform:scale(0.985);}
+
+.card-photo{width:100%;height:190px;object-fit:cover;display:block;}
+
+.card-photo-placeholder{
+  width:100%;height:190px;
+  background:linear-gradient(150deg,#0c1a28 0%,#0f2340 55%,#0a1828 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:58px;position:relative;overflow:hidden;
+}
+.card-photo-placeholder::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 25% 35%,rgba(0,194,255,0.07) 0%,transparent 65%);
+}
+.card-photo-placeholder::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:70px;
+  background:linear-gradient(to top,var(--surface),transparent);
+}
+
+.card-body{padding:15px;}
+
+.card-species{font-size:18px;font-weight:600;color:var(--text);letter-spacing:-0.3px;line-height:1.2;}
+.card-date{font-size:11px;font-weight:500;color:var(--text-muted);margin-top:3px;margin-bottom:12px;}
+
+.card-measurements{
+  display:flex;gap:0;margin-bottom:12px;
+  background:var(--surface2);border-radius:var(--r-sm);overflow:hidden;
+  border:1px solid var(--border);
+}
+.measure{flex:1;padding:10px 12px;display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--border);}
+.measure:last-child{border-right:none;}
+.measure-val{font-size:17px;font-weight:700;color:var(--accent);letter-spacing:-0.5px;line-height:1;}
+.measure-label{font-size:9px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);}
+
+.card-bait{
+  font-size:12px;color:var(--text-muted);line-height:1.5;
+  margin-bottom:12px;display:flex;align-items:flex-start;gap:7px;
+}
+.bait-pill{
+  font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  color:var(--green);background:rgba(0,229,160,0.08);
+  border:1px solid rgba(0,229,160,0.18);border-radius:4px;
+  padding:2px 6px;flex-shrink:0;margin-top:1px;
+}
+
+.card-actions{display:flex;gap:8px;}
+.btn-sm{
+  flex:1;background:var(--surface2);border:1px solid var(--border2);
+  font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:500;
+  padding:9px 10px;cursor:pointer;border-radius:var(--r-sm);
+  transition:all 0.15s;letter-spacing:0.2px;
+}
+.btn-edit{color:var(--accent);}
+.btn-edit:hover{background:var(--accent);color:#000;border-color:var(--accent);}
+.btn-delete{color:var(--red);}
+.btn-delete:hover{background:var(--red);color:#fff;border-color:var(--red);}
+
+/* ── EMPTY STATE ─────────────────────────── */
+.empty-state{grid-column:1/-1;text-align:center;padding:80px 40px;}
+.empty-icon{font-size:64px;margin-bottom:20px;display:block;}
+.empty-state h3{font-size:22px;font-weight:600;color:var(--text);margin-bottom:8px;letter-spacing:-0.3px;}
+.empty-state p{font-size:14px;color:var(--text-muted);}
+
+/* ── PB BADGE ────────────────────────────── */
+.pb-badge{
+  position:absolute;top:12px;right:12px;
+  background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.35);
+  color:var(--gold);font-family:'Space Mono',monospace;
+  font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  padding:4px 8px;border-radius:6px;backdrop-filter:blur(8px);
+}
+
+/* ── MODAL ───────────────────────────────── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.78);z-index:100;
+  align-items:flex-start;justify-content:center;
+  padding:40px 16px;overflow-y:auto;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.modal-overlay.open{display:flex;}
+
+.modal{
+  background:var(--surface);width:100%;max-width:540px;
+  border-radius:var(--r);border:1px solid var(--border2);
+  box-shadow:0 24px 80px rgba(0,0,0,0.7);
+  overflow:hidden;animation:slideUp 0.28s cubic-bezier(0.16,1,0.3,1);position:relative;
+}
+@keyframes slideUp{
+  from{opacity:0;transform:translateY(22px) scale(0.98);}
+  to{opacity:1;transform:translateY(0) scale(1);}
+}
+
+.modal-header{
+  padding:20px 20px 0;display:flex;align-items:center;
+  justify-content:space-between;margin-bottom:18px;
+}
+.modal-title{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-0.3px;}
+.modal-close{
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text-muted);font-size:15px;cursor:pointer;
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;line-height:1;
+}
+.modal-close:hover{background:var(--surface3);color:var(--text);}
+
+.modal-body{padding:0 20px 18px;}
+
+.form-row{display:flex;gap:11px;margin-bottom:13px;}
+.form-group{flex:1;display:flex;flex-direction:column;}
+.form-label{
+  font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--text-muted);margin-bottom:6px;
+}
+.form-input,.form-textarea{
+  background:var(--surface2);border:1px solid var(--border2);
+  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:400;
+  padding:11px 12px;color:var(--text);border-radius:var(--r-sm);
+  outline:none;transition:border-color 0.2s,box-shadow 0.2s;
+  width:100%;-webkit-appearance:none;
+}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text-dim);}
+.form-input:focus,.form-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+.form-textarea{resize:vertical;min-height:72px;}
+
+/* ── PHOTO UPLOAD ────────────────────────── */
+.photo-upload-area{
+  border:1.5px dashed var(--border2);border-radius:var(--r-sm);
+  padding:22px 16px;text-align:center;cursor:pointer;
+  transition:all 0.2s;position:relative;margin-bottom:13px;
+  background:var(--surface2);
+}
+.photo-upload-area:hover,.photo-upload-area.drag-over{
+  border-color:var(--accent);background:rgba(0,194,255,0.04);
+}
+.photo-upload-area input[type="file"]{
+  position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;
+}
+.photo-preview-wrap{position:relative;margin-bottom:13px;}
+.photo-preview{width:100%;max-height:200px;object-fit:cover;border-radius:var(--r-sm);display:none;}
+.photo-remove{
+  position:absolute;top:8px;right:8px;
+  background:rgba(0,0,0,0.65);color:var(--text);border:1px solid var(--border2);
+  border-radius:50%;width:30px;height:30px;font-size:14px;cursor:pointer;
+  display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(8px);transition:background 0.15s;
+}
+.photo-remove:hover{background:var(--red);}
+.upload-icon{font-size:26px;margin-bottom:8px;opacity:0.55;}
+.upload-text{font-size:13px;color:var(--text-muted);font-weight:500;}
+.upload-hint{font-size:11px;color:var(--text-dim);margin-top:4px;}
+
+/* ── MODAL FOOTER ────────────────────────── */
+.modal-footer{padding:0 20px 20px;display:flex;gap:10px;}
+.btn-cancel{
+  flex:1;background:var(--surface2);border:1px solid var(--border2);
+  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:500;
+  padding:13px;cursor:pointer;border-radius:var(--r-sm);color:var(--text-muted);transition:all 0.15s;
+}
+.btn-cancel:hover{background:var(--surface3);color:var(--text);}
+.btn-save{
+  flex:2;background:var(--accent);border:none;
+  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;
+  padding:13px;cursor:pointer;border-radius:var(--r-sm);color:#000;
+  transition:all 0.2s;box-shadow:0 0 20px var(--accent-glow);
+}
+.btn-save:hover{background:#22d4ff;box-shadow:0 0 32px rgba(0,194,255,0.35);transform:translateY(-1px);}
+.btn-save:active{transform:scale(0.98);}
+
+/* ── DETAIL MODAL ────────────────────────── */
+.detail-photo{width:100%;max-height:280px;object-fit:cover;display:block;}
+.detail-photo-placeholder{
+  width:100%;height:180px;
+  background:linear-gradient(135deg,#0c1a28,#0f2340);
+  display:flex;align-items:center;justify-content:center;
+  font-size:64px;opacity:0.5;
+}
+.detail-body{padding:22px 20px 4px;}
+.detail-species{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin-bottom:4px;color:var(--text);}
+.detail-date{font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:18px;}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:14px;}
+.detail-item{background:var(--surface2);border-radius:var(--r-sm);padding:14px;}
+.detail-item label{
+  font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--text-muted);display:block;margin-bottom:4px;
+}
+.detail-item span{font-size:22px;font-weight:700;color:var(--accent);letter-spacing:-0.5px;}
+.detail-bait{
+  background:rgba(0,229,160,0.05);border:1px solid rgba(0,229,160,0.14);
+  padding:12px 14px;border-radius:var(--r-sm);font-size:13px;
+  line-height:1.6;color:var(--text-muted);margin-bottom:11px;
+}
+.detail-bait strong{
+  display:block;font-size:9px;font-weight:600;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--green);margin-bottom:4px;
+}
+.detail-notes{
+  font-size:13px;color:var(--text-muted);line-height:1.7;font-style:italic;
+  padding:12px 14px;background:var(--surface2);border-radius:var(--r-sm);
+  margin-bottom:11px;border-left:3px solid var(--accent2);
+}
+
+/* ── RESPONSIVE / MOBILE ─────────────────── */
+@media(max-width:600px){
+  header{padding-top:calc(12px + env(safe-area-inset-top,0px));padding-left:16px;padding-right:16px;}
+  .logo-name{font-size:20px;}
+  .btn-add{display:none;}
+  main{padding:14px 12px;}
+  .catch-grid{grid-template-columns:1fr;gap:12px;}
+  .stat{min-width:78px;padding:10px 8px;}
+  .stat-num{font-size:18px;}
+  .stat-label{font-size:8px;}
+  .modal-overlay{padding:0;align-items:flex-end;}
+  .modal{border-radius:20px 20px 0 0;max-width:100%;max-height:92dvh;overflow-y:auto;}
+  .modal-footer{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));}
+  .form-row{flex-direction:column;}
+  .form-input,.form-textarea,.search-input,.filter-select{font-size:16px;}
+  .btn-sm{padding:10px 12px;font-size:13px;}
+}
+
+/* ── FAB ─────────────────────────────────── */
+.fab{display:none;}
+@media(max-width:600px){
+  .fab{
+    display:flex;align-items:center;justify-content:center;
+    position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:20px;
+    width:60px;height:60px;border-radius:50%;
+    background:var(--accent);color:#000;font-size:26px;border:none;cursor:pointer;
+    box-shadow:0 4px 28px rgba(0,194,255,0.45),0 2px 8px rgba(0,0,0,0.4);
+    z-index:60;transition:transform 0.15s,box-shadow 0.15s;
+  }
+  .fab:active{transform:scale(0.91);box-shadow:0 2px 14px rgba(0,194,255,0.3);}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎣</div>
+    <div class="logo-text">
+      <span class="logo-name">Fish<span>olog</span></span>
+      <span class="logo-tagline">Your catch journal</span>
+    </div>
+  </div>
+  <button class="btn-add" onclick="openAddModal()">+ Log Catch</button>
+</header>
+
+<div class="install-banner" id="installBanner">
+  <span>📲 <strong style="color:var(--accent)">Add to Home Screen</strong> — tap Share → "Add to Home Screen"</span>
+  <button class="install-dismiss" onclick="dismissBanner()">Got it</button>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><span class="stat-num" id="statTotal">0</span><span class="stat-label">Catches</span></div>
+  <div class="stat"><span class="stat-num" id="statSpecies">0</span><span class="stat-label">Species</span></div>
+  <div class="stat"><span class="stat-num" id="statHeaviest">—</span><span class="stat-label">Best kg</span></div>
+  <div class="stat"><span class="stat-num" id="statLongest">—</span><span class="stat-label">Best cm</span></div>
+</div>
+
+<main>
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input class="search-input" type="text" placeholder="Search species, bait, notes…" oninput="renderCards()">
+    </div>
+    <select class="filter-select" id="sortSelect" onchange="renderCards()">
+      <option value="date-desc">Newest</option>
+      <option value="date-asc">Oldest</option>
+      <option value="weight-desc">Heaviest</option>
+      <option value="length-desc">Longest</option>
+    </select>
+    <select class="filter-select" id="speciesFilter" onchange="renderCards()">
+      <option value="">All Species</option>
+    </select>
+  </div>
+  <div class="catch-grid" id="catchGrid"></div>
+</main>
+
+<button class="fab" onclick="openAddModal()" aria-label="Log a catch">🎣</button>
+
+<!-- FORM MODAL -->
+<div class="modal-overlay" id="formModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Log a Catch</span>
+      <button class="modal-close" onclick="closeModal('formModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="photo-preview-wrap" id="previewWrap">
+        <img class="photo-preview" id="photoPreview">
+        <button class="photo-remove" id="photoRemoveBtn" onclick="removePhoto()">✕</button>
+      </div>
+      <div class="photo-upload-area" id="uploadArea">
+        <input type="file" accept="image/*" id="photoInput" onchange="handlePhoto(this)">
+        <div class="upload-icon">📷</div>
+        <div class="upload-text">Tap or drag to add a photo</div>
+        <div class="upload-hint">JPG, PNG, HEIC — up to 10MB</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Species *</label>
+          <input class="form-input" id="fSpecies" type="text" placeholder="e.g. Murray Cod" list="speciesDatalist">
+          <datalist id="speciesDatalist"></datalist>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date *</label>
+          <input class="form-input" id="fDate" type="date">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Weight (kg)</label>
+          <input class="form-input" id="fWeight" type="number" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Length (cm)</label>
+          <input class="form-input" id="fLength" type="number" step="0.1" min="0" placeholder="0.0">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:13px">
+        <label class="form-label">Bait / Lures Used</label>
+        <input class="form-input" id="fBait" type="text" placeholder="e.g. Squid, 80mm Vibe lure, Worm">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Notes</label>
+        <textarea class="form-textarea" id="fNotes" placeholder="Location, conditions, time of day…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('formModal')">Cancel</button>
+      <button class="btn-save" id="formSaveBtn" onclick="saveCatch()">Record Catch</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Catch Details</span>
+      <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div id="detailContent"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('detailModal')">Close</button>
+      <button class="btn-save" id="detailEditBtn">Edit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let catches = JSON.parse(localStorage.getItem('catchLog') || '[]');
+let editingId = null;
+let currentPhoto = null;
+
+function save() {
+  try {
+    localStorage.setItem('catchLog', JSON.stringify(catches));
+  } catch(e) {
+    try {
+      localStorage.setItem('catchLog', JSON.stringify(catches.map(c=>({...c,photo:null}))));
+      alert('Storage limit reached — photos were not saved, but all catch data is safe.');
+    } catch(e2) {
+      alert('Storage full. Delete some catches to free space.');
+    }
+  }
+}
+
+function todayISO() { return new Date().toISOString().split('T')[0]; }
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = catches.length;
+  document.getElementById('statSpecies').textContent = new Set(catches.map(c=>c.species.toLowerCase())).size || 0;
+  const ws = catches.map(c=>parseFloat(c.weight)).filter(w=>!isNaN(w)&&w>0);
+  document.getElementById('statHeaviest').textContent = ws.length ? Math.max(...ws).toFixed(2) : '—';
+  const ls = catches.map(c=>parseFloat(c.length)).filter(l=>!isNaN(l)&&l>0);
+  document.getElementById('statLongest').textContent = ls.length ? Math.max(...ls).toFixed(1) : '—';
+}
+
+function updateFilters() {
+  const set = [...new Set(catches.map(c=>c.species).filter(Boolean))].sort();
+  const el = document.getElementById('speciesFilter');
+  const cur = el.value;
+  el.innerHTML = '<option value="">All Species</option>';
+  set.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;el.appendChild(o);});
+  if(cur) el.value=cur;
+  const dl = document.getElementById('speciesDatalist');
+  dl.innerHTML='';
+  set.forEach(s=>{const o=document.createElement('option');o.value=s;dl.appendChild(o);});
+}
+
+function isPB(c) {
+  const sp = catches.filter(x=>x.species.toLowerCase()===c.species.toLowerCase());
+  if(sp.length<2) return false;
+  const best = Math.max(...sp.map(x=>parseFloat(x.weight)).filter(w=>!isNaN(w)));
+  return parseFloat(c.weight)===best && best>0;
+}
+
+function renderCards() {
+  const q  = document.querySelector('.search-input').value.toLowerCase();
+  const s  = document.getElementById('sortSelect').value;
+  const sp = document.getElementById('speciesFilter').value.toLowerCase();
+  let list = [...catches];
+  if(q)  list=list.filter(c=>(c.species||'').toLowerCase().includes(q)||(c.bait||'').toLowerCase().includes(q)||(c.notes||'').toLowerCase().includes(q));
+  if(sp) list=list.filter(c=>(c.species||'').toLowerCase()===sp);
+  list.sort((a,b)=>{
+    if(s==='date-desc')   return new Date(b.date)-new Date(a.date);
+    if(s==='date-asc')    return new Date(a.date)-new Date(b.date);
+    if(s==='weight-desc') return (parseFloat(b.weight)||0)-(parseFloat(a.weight)||0);
+    if(s==='length-desc') return (parseFloat(b.length)||0)-(parseFloat(a.length)||0);
+    return 0;
+  });
+
+  const grid = document.getElementById('catchGrid');
+  if(!list.length){
+    grid.innerHTML=`<div class="empty-state"><span class="empty-icon">🎣</span><h3>No catches logged yet</h3><p>Tap the button to record your first fish</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(c=>{
+    const pb = isPB(c);
+    const photo = c.photo
+      ? `<img class="card-photo" src="${c.photo}" alt="${c.species}" loading="lazy">`
+      : `<div class="card-photo-placeholder">🐟</div>`;
+    return `
+      <div class="catch-card" onclick="openDetail('${c.id}')">
+        ${photo}
+        ${pb?'<div class="pb-badge">🏆 Personal Best</div>':''}
+        <div class="card-body">
+          <div class="card-species">${c.species||'Unknown'}</div>
+          <div class="card-date">${formatDate(c.date)}</div>
+          <div class="card-measurements">
+            <div class="measure"><span class="measure-val">${c.weight?c.weight+'kg':'—'}</span><span class="measure-label">Weight</span></div>
+            <div class="measure"><span class="measure-val">${c.length?c.length+'cm':'—'}</span><span class="measure-label">Length</span></div>
+          </div>
+          ${c.bait?`<div class="card-bait"><span class="bait-pill">Bait</span>${c.bait}</div>`:''}
+          <div class="card-actions" onclick="event.stopPropagation()">
+            <button class="btn-sm btn-edit" onclick="openEditModal('${c.id}')">Edit</button>
+            <button class="btn-sm btn-delete" onclick="deleteCatch('${c.id}')">Delete</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+  el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');});
+});
+
+function handlePhoto(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    currentPhoto = e.target.result;
+    document.getElementById('photoPreview').src = currentPhoto;
+    document.getElementById('photoPreview').style.display = 'block';
+    document.getElementById('photoRemoveBtn').style.display = 'flex';
+    document.getElementById('uploadArea').style.display = 'none';
+  };
+  r.readAsDataURL(file);
+}
+
+function removePhoto() {
+  currentPhoto = null;
+  document.getElementById('photoPreview').src = '';
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('photoRemoveBtn').style.display = 'none';
+  document.getElementById('uploadArea').style.display = 'block';
+  document.getElementById('photoInput').value = '';
+}
+
+function openAddModal() {
+  editingId = null; currentPhoto = null;
+  document.getElementById('modalTitle').textContent = 'Log a Catch';
+  document.getElementById('formSaveBtn').textContent = 'Record Catch';
+  ['fSpecies','fWeight','fLength','fBait','fNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fDate').value = todayISO();
+  removePhoto();
+  document.getElementById('formModal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const c = catches.find(x=>x.id===id);
+  if(!c) return;
+  editingId = id; currentPhoto = c.photo||null;
+  document.getElementById('modalTitle').textContent = 'Edit Catch';
+  document.getElementById('formSaveBtn').textContent = 'Save Changes';
+  document.getElementById('fSpecies').value = c.species||'';
+  document.getElementById('fDate').value    = c.date||'';
+  document.getElementById('fWeight').value  = c.weight||'';
+  document.getElementById('fLength').value  = c.length||'';
+  document.getElementById('fBait').value    = c.bait||'';
+  document.getElementById('fNotes').value   = c.notes||'';
+  if(currentPhoto){
+    document.getElementById('photoPreview').src = currentPhoto;
+    document.getElementById('photoPreview').style.display = 'block';
+    document.getElementById('photoRemoveBtn').style.display = 'flex';
+    document.getElementById('uploadArea').style.display = 'none';
+  } else { removePhoto(); }
+  closeModal('detailModal');
+  document.getElementById('formModal').classList.add('open');
+}
+
+function saveCatch() {
+  const species = document.getElementById('fSpecies').value.trim();
+  const date    = document.getElementById('fDate').value;
+  if(!species){alert('Please enter a species.');return;}
+  if(!date){alert('Please enter a date.');return;}
+  const record = {
+    id: editingId||Date.now().toString(36)+Math.random().toString(36).slice(2),
+    species,date,
+    weight: document.getElementById('fWeight').value,
+    length: document.getElementById('fLength').value,
+    bait:   document.getElementById('fBait').value.trim(),
+    notes:  document.getElementById('fNotes').value.trim(),
+    photo:  currentPhoto,
+    created: editingId?(catches.find(c=>c.id===editingId)?.created||Date.now()):Date.now(),
+  };
+  if(editingId){ catches[catches.findIndex(c=>c.id===editingId)]=record; }
+  else { catches.push(record); }
+  save(); updateStats(); updateFilters(); renderCards();
+  closeModal('formModal');
+}
+
+function deleteCatch(id) {
+  if(!confirm('Remove this catch?')) return;
+  catches = catches.filter(c=>c.id!==id);
+  save(); updateStats(); updateFilters(); renderCards();
+}
+
+function openDetail(id) {
+  const c = catches.find(x=>x.id===id);
+  if(!c) return;
+  const photo = c.photo
+    ? `<img class="detail-photo" src="${c.photo}" alt="${c.species}">`
+    : `<div class="detail-photo-placeholder">🐟</div>`;
+  document.getElementById('detailContent').innerHTML = `
+    ${photo}
+    <div class="detail-body">
+      <div class="detail-species">${c.species}</div>
+      <div class="detail-date">${formatDate(c.date)}</div>
+      <div class="detail-grid">
+        <div class="detail-item"><label>Weight</label><span>${c.weight?c.weight+' kg':'—'}</span></div>
+        <div class="detail-item"><label>Length</label><span>${c.length?c.length+' cm':'—'}</span></div>
+      </div>
+      ${c.bait?`<div class="detail-bait"><strong>Bait / Lures</strong>${c.bait}</div>`:''}
+      ${c.notes?`<div class="detail-notes">${c.notes}</div>`:''}
+    </div>`;
+  document.getElementById('detailEditBtn').onclick = ()=>openEditModal(id);
+  document.getElementById('detailModal').classList.add('open');
+}
+
+// Drag & drop
+const ua = document.getElementById('uploadArea');
+ua.addEventListener('dragover',e=>{e.preventDefault();ua.classList.add('drag-over');});
+ua.addEventListener('dragleave',()=>ua.classList.remove('drag-over'));
+ua.addEventListener('drop',e=>{
+  e.preventDefault();ua.classList.remove('drag-over');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type.startsWith('image/')){
+    const dt=new DataTransfer();dt.items.add(f);
+    document.getElementById('photoInput').files=dt.files;
+    handlePhoto(document.getElementById('photoInput'));
+  }
+});
+
+// Init
+updateStats(); updateFilters(); renderCards();
+
+// iOS install banner
+const isStandalone=()=>window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches;
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
+function dismissBanner(){
+  document.getElementById('installBanner').classList.remove('visible');
+  localStorage.setItem('installBannerDismissed','1');
+}
+if(isIOS()&&!isStandalone()&&!localStorage.getItem('installBannerDismissed')){
+  document.getElementById('installBanner').classList.add('visible');
+}
+
+// Service Worker
+if('serviceWorker' in navigator){
+  const sw=`const C='fisholog-v2';self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll([self.location.href||'/'])));self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(resp=>{const cl=resp.clone();caches.open(C).then(c=>c.put(e.request,cl));return resp;})).catch(()=>caches.match(e.request)));});`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
+}
+</script>
+</body>
+</html>
